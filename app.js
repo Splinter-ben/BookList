@@ -10,22 +10,9 @@ class Book {
 // UI Class: handle UI tasks
 class UI {
     static displayBooks() {
-        const StoreBooks = [
-            {
-                title: 'Book One',
-                author: 'John Doe',
-                isbn: 345364
-            },
-            {
-                title: 'Book Two',
-                author: 'Jane Doe',
-                isbn: 564890
-            }
-        ];
-
-        const books = StoreBooks;
-        // loop throw the array of books
-        books.forEach(book => UI.addBookToList(book));
+        const books = Store.getBooks();
+        // loop through the array of books
+        books.forEach((book) => UI.addBookToList(book));
     }
 
     static addBookToList(book) {
@@ -71,6 +58,37 @@ class UI {
 }
 
 // Store Class: handles storage
+class Store {
+    static getBooks() {
+        let books;
+        if (localStorage.getItem('books') === null) {
+            books = []
+        } else {
+            books = JSON.parse(localStorage.getItem('books'));
+        }
+        return books;
+    }
+
+    static addBook(book) {
+        const books = Store.getBooks();
+        books.push(book);
+
+        localStorage.setItem('books', JSON.stringify(books));
+    }
+
+    static removeBook(isbn) {
+        const books = Store.getBooks();
+
+        books.forEach((book, index) => {
+            if (book.isbn === isbn) {
+                books.splice(index, 1)
+            };
+        });
+
+        localStorage.setItem('books', JSON.stringify(books));
+    }
+
+}
 
 // Display Event: display Books
 document.addEventListener('DOMContentLoaded', UI.displayBooks);
@@ -90,7 +108,6 @@ document.querySelector('#book-form')
         if (!title || !author || !isbn) {
             UI.showAlert('Please fill in all the fields', 'danger');
         } else {
-            UI.showAlert('Added Book to local storage', 'success');
             // Instantiate Book
             const book = new Book(title, author, isbn);
             console.log(book);
@@ -98,13 +115,24 @@ document.querySelector('#book-form')
             // Add Book to UI
             UI.addBookToList(book);
 
+            // Add book to Store
+            Store.addBook(book);
+
             // Clear field after submit
             UI.clearField();
+
+            UI.showAlert('Added Book to local storage', 'success');
         }
     });
 
 // Remove Event: Remove a Book
 document.querySelector('#book-list')
     .addEventListener('click', (e) => {
+        // Remove book from UI   
         UI.deleteBook(e.target);
+
+        // Remove book from Store
+        Store.removeBook(e.target.parentElement.previousElementSibling.textContent);
+
+        UI.showAlert('Book removed', 'warning');
     });
